@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Flavor Studio — Map the molecules behind every pairing</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#202020; --surface:#292929; --surface-2:#1f1f1f;
+    --ink:#ffffff; --muted:#c8c8c8; --line:#3b3a39;
+    --amber:#E8A33D; --teal:#49C7B6; --amber-soft:#2A2214;
+    box-sizing:border-box;
+    padding-top:env(safe-area-inset-top,0px);
+    padding-bottom:env(safe-area-inset-bottom,0px);
+  }
+  html{scroll-padding-top:env(safe-area-inset-top,0px);}
+  *{box-sizing:border-box;}
+  body{
+    margin:0; background:var(--bg); color:var(--ink);
+    font-family:'IBM Plex Sans',sans-serif; line-height:1.55;
+    -webkit-font-smoothing:antialiased;
+  }
+  h1,h2,h3{font-family:'Space Grotesk',sans-serif; margin:0; font-weight:600; letter-spacing:-0.01em;}
+  .mono{font-family:'IBM Plex Mono',monospace;}
+  .wrap{max-width:1120px; margin:0 auto; padding:0 28px;}
+  a{color:inherit;}
+
+  header.top{
+    position:sticky; top:0; z-index:20; backdrop-filter:blur(10px);
+    background:color-mix(in srgb, var(--bg) 82%, transparent);
+    border-bottom:1px solid var(--line);
+    padding-top:env(safe-area-inset-top,0px);
+  }
+  .topbar{display:flex; align-items:center; justify-content:space-between; padding:16px 0;}
+  .brand{display:flex; align-items:center; gap:10px; font-family:'Space Grotesk',sans-serif; font-weight:600; font-size:1.05rem;}
+  .brand-mark{width:26px; height:26px;}
+  nav.topnav a{font-size:0.92rem; color:var(--muted); text-decoration:none; margin-left:26px;}
+  nav.topnav a:hover{color:var(--ink);}
+
+  /* HERO */
+  .hero{position:relative; overflow:hidden; padding:92px 0 72px;}
+  .hero-grid{display:grid; grid-template-columns:1.05fr 0.95fr; gap:48px; align-items:center;}
+  .eyebrow{display:inline-flex; align-items:center; gap:8px; color:var(--teal); font-size:0.9rem; margin-bottom:18px;}
+  .eyebrow svg{width:16px; height:16px;}
+  h1.display{font-size:clamp(2.2rem,4.2vw,3.4rem); line-height:1.08;}
+  h1.display em{font-style:normal; color:var(--amber);}
+  .lede{color:var(--muted); font-size:1.08rem; max-width:46ch; margin:20px 0 32px;}
+  .cta-row{display:flex; flex-wrap:wrap; gap:14px;}
+  .btn{
+    display:inline-flex; align-items:center; gap:9px; padding:13px 22px; border-radius:9px;
+    font-weight:500; font-size:0.96rem; text-decoration:none; border:1px solid transparent;
+    transition:transform .15s ease, box-shadow .15s ease;
+  }
+  .btn:hover{transform:translateY(-1px);}
+  .btn:focus-visible{outline:2px solid var(--teal); outline-offset:2px;}
+  .btn-primary{background:var(--amber); color:#1A1206;}
+  .btn-primary:hover{box-shadow:0 8px 22px -8px color-mix(in srgb, var(--amber) 70%, transparent);}
+  .btn-ghost{background:transparent; color:var(--ink); border-color:var(--line);}
+  .btn-ghost:hover{border-color:var(--teal); color:var(--teal);}
+  .price-note{font-size:0.82rem; color:var(--muted); margin-top:10px;}
+
+  .graph-card{
+    position:relative; aspect-ratio:1/0.92; border-radius:16px;
+    background:var(--surface); border:1px solid var(--line);
+    box-shadow:0 30px 60px -30px rgba(0,0,0,.35);
+  }
+  .graph-card svg{width:100%; height:100%;}
+  .node-label{font-family:'IBM Plex Mono',monospace; font-size:10.5px; fill:var(--muted);}
+
+  /* PANELS */
+  .panels{padding:30px 0 90px;}
+  .panel-head{text-align:center; max-width:580px; margin:0 auto 52px;}
+  .panel-head h2{font-size:clamp(1.6rem,2.6vw,2.1rem);}
+  .panel-head p{color:var(--muted); margin-top:12px;}
+  .tabs-visual{display:flex; gap:10px; justify-content:center; margin-bottom:30px;}
+  .tab-chip{font-family:'IBM Plex Mono',monospace; font-size:0.8rem; padding:7px 14px; border-radius:7px; border:1px solid var(--line); color:var(--muted);}
+  .tab-chip.active{color:var(--ink); border-color:var(--amber); background:var(--amber-soft);}
+
+  .feature-row{display:grid; grid-template-columns:0.95fr 1.05fr; gap:52px; align-items:center; margin-bottom:96px;}
+  .feature-row.reverse{grid-template-columns:1.05fr 0.95fr;}
+  .feature-row.reverse .feature-text{order:2;}
+  .feature-tag{font-size:0.85rem; color:var(--teal); margin-bottom:10px;}
+  .feature-row h3{font-size:1.6rem; margin-bottom:14px;}
+  .feature-row p{color:var(--muted); max-width:44ch;}
+  .feature-list{list-style:none; padding:0; margin:20px 0 0; display:grid; gap:10px;}
+  .feature-list li{display:flex; gap:10px; font-size:0.95rem; color:var(--ink);}
+  .feature-list li::before{content:""; width:6px; height:6px; margin-top:8px; border-radius:50%; background:var(--amber); flex:none;}
+
+  .mock{
+    border-radius:14px; border:1px solid var(--line); background:var(--surface);
+    box-shadow:0 24px 48px -28px rgba(0,0,0,.3); overflow:hidden;
+  }
+  .mock-bar{display:flex; gap:6px; padding:11px 14px; border-bottom:1px solid var(--line); background:var(--surface-2);}
+  .mock-bar span{width:9px; height:9px; border-radius:50%; background:var(--line);}
+  .mock-body{padding:20px;}
+
+  .compound-row{display:flex; justify-content:space-between; align-items:center; padding:10px 0; border-bottom:1px dashed var(--line); font-size:0.88rem;}
+  .compound-row:last-child{border-bottom:none;}
+  .compound-name{font-weight:500;}
+  .compound-formula{font-family:'IBM Plex Mono',monospace; color:var(--teal); font-size:0.82rem;}
+
+  /* PRICING */
+  .pricing{padding:30px 0 100px; border-top:1px solid var(--line);}
+  .pricing-grid{display:grid; grid-template-columns:1fr 1fr; gap:24px; margin-top:44px;}
+  .price-card{
+    border:1px solid var(--line); border-radius:16px; padding:32px; background:var(--surface);
+    display:flex; flex-direction:column;
+  }
+  .price-card.full{border-color:var(--amber); background:linear-gradient(180deg, color-mix(in srgb, var(--amber) 7%, var(--surface)), var(--surface) 55%);}
+  .price-card h3{font-size:1.2rem; margin-bottom:6px;}
+  .price-tag{font-family:'Space Grotesk',sans-serif; font-size:2rem; margin:14px 0 4px;}
+  .price-period{font-size:0.95rem; color:var(--muted); font-weight:400;}
+  .price-sub{color:var(--muted); font-size:0.88rem; margin-bottom:22px;}
+  .price-card ul{list-style:none; padding:0; margin:0 0 26px; display:grid; gap:11px;}
+  .price-card li{display:flex; gap:10px; font-size:0.92rem;}
+  .check{width:17px; height:17px; flex:none; color:var(--teal);}
+  .price-card .btn{justify-content:center; width:100%;}
+
+  footer{border-top:1px solid var(--line); padding:34px 0; padding-bottom:calc(34px + env(safe-area-inset-bottom,0px));}
+  .foot-row{display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; color:var(--muted); font-size:0.85rem;}
+
+  @media (max-width:860px){
+    .hero-grid, .feature-row, .feature-row.reverse{grid-template-columns:1fr; }
+    .feature-row.reverse .feature-text{order:0;}
+    .pricing-grid{grid-template-columns:1fr;}
+    nav.topnav{display:none;}
+  }
+  @media (prefers-reduced-motion: reduce){
+    .btn{transition:none;}
+  }
+
+  @keyframes draw{to{stroke-dashoffset:0;}}
+  @keyframes pop{from{opacity:0; transform:scale(0.4);} to{opacity:1; transform:scale(1);}}
+  .hero-graph line{stroke-dasharray:240; stroke-dashoffset:240; animation:draw .9s ease forwards; animation-delay:calc(var(--i,0) * 90ms);}
+  .hero-graph circle{transform-origin:center; animation:pop .4s ease forwards; animation-delay:calc(var(--i,0) * 90ms + .5s);}
+  .hero-graph text{opacity:0; animation:pop .4s ease forwards; animation-delay:calc(var(--i,0) * 90ms + .65s);}
+
+  .descriptor-demo{font-family:'IBM Plex Mono',monospace;}
+  .demo-search{display:flex; align-items:center; gap:8px; font-size:0.92rem; color:var(--muted); margin-bottom:16px; padding-bottom:12px; border-bottom:1px solid var(--line);}
+  .demo-search .prompt{color:var(--teal);}
+  #descriptorText{color:var(--amber); font-weight:500;}
+  .caret-blink{animation:blink 1s step-end infinite; color:var(--amber);}
+  @keyframes blink{50%{opacity:0;}}
+  #compoundResults{transition:opacity .25s ease;}
+
+  @media (prefers-reduced-motion: reduce){
+    .hero-graph line, .hero-graph circle, .hero-graph text{animation:none !important; stroke-dashoffset:0; opacity:1;}
+    .caret-blink{animation:none;}
+  }
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="wrap topbar">
+    <div class="brand">
+      <svg class="brand-mark" viewBox="0 0 24 24" fill="none"><circle cx="6" cy="18" r="3" fill="#C97A1F"/><circle cx="18" cy="6" r="3" fill="#1F7A6E"/><circle cx="17" cy="19" r="2" fill="#C97A1F" opacity="0.6"/><line x1="6" y1="18" x2="18" y2="6" stroke="currentColor" stroke-width="1.2" opacity="0.5"/><line x1="6" y1="18" x2="17" y2="19" stroke="currentColor" stroke-width="1.2" opacity="0.5"/></svg>
+      Flavor Studio
+    </div>
+    <nav class="topnav">
+      <a href="#explorers">Explorers</a>
+      <a href="#pricing">Download</a>
+    </nav>
+  </div>
+</header>
+
+<section class="hero">
+  <div class="wrap hero-grid">
+    <div>
+      <div class="eyebrow">
+        <svg viewBox="0 0 16 16" fill="none"><circle cx="4" cy="12" r="2" fill="currentColor"/><circle cx="12" cy="4" r="2" fill="currentColor"/><line x1="4" y1="12" x2="12" y2="4" stroke="currentColor" stroke-width="1.2"/></svg>
+        Search by flavor, not just by name
+      </div>
+      <h1 class="display">Find out why two ingredients <em>belong</em> together.</h1>
+      <p class="lede">Flavor Studio turns a database of food chemistry into something you can actually explore — look up the compounds inside an ingredient, then trace the pairing network they share with everything else in your pantry.</p>
+      <div class="cta-row">
+        <a class="btn btn-primary" href="https://drive.google.com/drive/folders/1Ry8NOdi-HwA2NazDL1nB8akJpxkoto7h?usp=drive_link" id="demo-link" target="_blank" rel="noopener">Download the free demo</a>
+        <a class="btn btn-ghost" href="#pricing">Get the full version</a>
+      </div>
+      <p class="price-note">Demo runs the full interface on a limited compound set — no signup required.</p>
+    </div>
+
+    <div class="graph-card" aria-hidden="true">
+      <svg class="hero-graph" viewBox="0 0 400 370">
+        <line style="--i:0" x1="200" y1="185" x2="90" y2="100" stroke="var(--line)" stroke-width="1.4"/>
+        <line style="--i:1" x1="200" y1="185" x2="310" y2="95" stroke="var(--line)" stroke-width="1.4"/>
+        <line style="--i:2" x1="200" y1="185" x2="70" y2="260" stroke="var(--line)" stroke-width="1.4"/>
+        <line style="--i:3" x1="200" y1="185" x2="320" y2="270" stroke="var(--line)" stroke-width="1.4"/>
+        <line style="--i:4" x1="200" y1="185" x2="205" y2="310" stroke="var(--line)" stroke-width="1.4"/>
+        <line style="--i:5" x1="90" y1="100" x2="205" y2="310" stroke="var(--line)" stroke-width="1" opacity="0.5"/>
+        <line style="--i:6" x1="310" y1="95" x2="320" y2="270" stroke="var(--line)" stroke-width="1" opacity="0.5"/>
+        <line style="--i:7" x1="70" y1="260" x2="205" y2="310" stroke="var(--line)" stroke-width="1" opacity="0.5"/>
+
+        <circle style="--i:0" cx="200" cy="185" r="15" fill="var(--amber)"/>
+        <text style="--i:0" x="200" y="166" text-anchor="middle" class="node-label">cacao</text>
+
+        <circle style="--i:1" cx="90" cy="100" r="9" fill="var(--teal)"/>
+        <text style="--i:1" x="90" y="84" text-anchor="middle" class="node-label">coffee</text>
+
+        <circle style="--i:2" cx="310" cy="95" r="9" fill="var(--teal)"/>
+        <text style="--i:2" x="310" y="79" text-anchor="middle" class="node-label">hazelnut</text>
+
+        <circle style="--i:3" cx="70" cy="260" r="8" fill="var(--teal)"/>
+        <text style="--i:3" x="70" y="280" text-anchor="middle" class="node-label">vanilla</text>
+
+        <circle style="--i:4" cx="320" cy="270" r="8" fill="var(--teal)"/>
+        <text style="--i:4" x="320" y="290" text-anchor="middle" class="node-label">cinnamon</text>
+
+        <circle style="--i:5" cx="205" cy="310" r="8" fill="var(--teal)"/>
+        <text style="--i:5" x="205" y="332" text-anchor="middle" class="node-label">chili</text>
+
+        <circle r="3.5" fill="var(--amber)" opacity="0.9">
+          <animateMotion dur="2.4s" repeatCount="indefinite" path="M200,185 L90,100" begin="1.4s"/>
+        </circle>
+        <circle r="3.5" fill="var(--amber)" opacity="0.9">
+          <animateMotion dur="2.6s" repeatCount="indefinite" path="M200,185 L320,270" begin="1.9s"/>
+        </circle>
+      </svg>
+    </div>
+  </div>
+</section>
+
+<section class="panels" id="explorers">
+  <div class="wrap">
+    <div class="panel-head">
+      <h2>One app, two ways into the chemistry</h2>
+      <p>Switch between tabs depending on whether you're starting from a single ingredient or from a pairing idea.</p>
+    </div>
+
+    <div class="tabs-visual">
+      <span class="tab-chip active">Compound Explorer</span>
+      <span class="tab-chip">Flavor Pairing Explorer</span>
+    </div>
+
+    <div class="feature-row">
+      <div class="feature-text">
+        <div class="feature-tag">Tab 01</div>
+        <h3>Compound Explorer</h3>
+        <p>Start from a flavor, not a formula. Type a descriptor — citrus, roasted, floral — and watch the matching compounds surface, each one checked and corrected by hand rather than pulled raw from a database.</p>
+        <ul class="feature-list">
+          <li>Search by descriptor, compound name, or CAS number</li>
+          <li>Every result tied back to its dominant flavor note</li>
+          <li>Save notes on any compound as you work</li>
+        </ul>
+      </div>
+      <div class="mock">
+        <div class="mock-bar"><span></span><span></span><span></span></div>
+        <div class="mock-body descriptor-demo">
+          <div class="demo-search"><span class="prompt">descriptor:</span> <span id="descriptorText"></span><span class="caret-blink">|</span></div>
+          <div id="compoundResults"></div>
+        </div>
+      </div>
+      <script>
+      (function(){
+        var data=[
+          {tag:'citrus',items:[['Limonene','C10H16'],['Citral','C10H16O'],['Linalool','C10H18O']]},
+          {tag:'floral',items:[['Geraniol','C10H18O'],['Linalool','C10H18O'],['Phenylethanol','C8H10O']]},
+          {tag:'roasted',items:[['Pyrazine','C4H4N2'],['Furfural','C5H4O2'],['Maltol','C6H6O3']]},
+          {tag:'minty',items:[['Menthol','C10H20O'],['Menthone','C10H18O'],['Carvone','C10H14O']]}
+        ];
+        var i=0, label=document.getElementById('descriptorText'), box=document.getElementById('compoundResults');
+        function render(){
+          var d=data[i%data.length]; i++;
+          label.textContent=d.tag;
+          box.style.opacity=0;
+          setTimeout(function(){
+            box.innerHTML=d.items.map(function(c){return '<div class="compound-row"><span class="compound-name">'+c[0]+'</span><span class="compound-formula">'+c[1]+'</span></div>';}).join('');
+            box.style.opacity=1;
+          },260);
+        }
+        render();
+        setInterval(render,2800);
+      })();
+      </script>
+    </div>
+
+    <div class="feature-row reverse">
+      <div class="feature-text">
+        <div class="feature-tag">Tab 02</div>
+        <h3>Flavor Pairing Explorer</h3>
+        <p>See every ingredient that shares compounds with the one you picked, laid out as a network you can follow outward.</p>
+        <ul class="feature-list">
+          <li>Interactive pairing network, built from shared compounds</li>
+          <li>Filter by how many compounds two ingredients share</li>
+          <li>Export a pairing map for a dish or menu you're building</li>
+        </ul>
+      </div>
+      <div class="mock">
+        <div class="mock-bar"><span></span><span></span><span></span></div>
+        <div class="mock-body">
+          <svg viewBox="0 0 320 180" width="100%" height="180">
+            <line x1="60" y1="90" x2="150" y2="40" stroke="var(--line)" stroke-width="1.2"/>
+            <line x1="60" y1="90" x2="150" y2="140" stroke="var(--line)" stroke-width="1.2"/>
+            <line x1="150" y1="40" x2="250" y2="60" stroke="var(--line)" stroke-width="1.2"/>
+            <line x1="150" y1="140" x2="250" y2="120" stroke="var(--line)" stroke-width="1.2"/>
+            <line x1="250" y1="60" x2="250" y2="120" stroke="var(--line)" stroke-width="1" opacity="0.5"/>
+            <circle cx="60" cy="90" r="11" fill="var(--amber)"/>
+            <circle cx="150" cy="40" r="7" fill="var(--teal)"/>
+            <circle cx="150" cy="140" r="7" fill="var(--teal)"/>
+            <circle cx="250" cy="60" r="6" fill="var(--teal)" opacity="0.8"/>
+            <circle cx="250" cy="120" r="6" fill="var(--teal)" opacity="0.8"/>
+          </svg>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="pricing" id="pricing">
+  <div class="wrap">
+    <div class="panel-head">
+      <h2>Try it, then subscribe for the full library</h2>
+      <p>The demo is the real app on a smaller compound set. A subscription unlocks the complete, continuously updated compound library.</p>
+    </div>
+
+    <div class="pricing-grid">
+      <div class="price-card">
+        <h3>Demo</h3>
+        <div class="price-tag">Free</div>
+        <p class="price-sub">A limited ingredient set, full interface</p>
+        <ul>
+          <li><svg class="check" viewBox="0 0 20 20" fill="none"><path d="M4 10.5l4 4 8-9" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg> Compound Explorer, curated ingredient list</li>
+          <li><svg class="check" viewBox="0 0 20 20" fill="none"><path d="M4 10.5l4 4 8-9" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg> Flavor Pairing Explorer, sample network</li>
+          <li><svg class="check" viewBox="0 0 20 20" fill="none"><path d="M4 10.5l4 4 8-9" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg> No account needed</li>
+        </ul>
+        <a class="btn btn-ghost" href="https://drive.google.com/drive/folders/1Ry8NOdi-HwA2NazDL1nB8akJpxkoto7h?usp=drive_link" target="_blank" rel="noopener">Download demo</a>
+      </div>
+
+      <div class="price-card full">
+        <h3>Full version</h3>
+        <div class="price-tag">$59<span class="price-period">/month</span></div>
+        <p class="price-sub">Monthly subscription, cancel anytime</p>
+        <ul>
+          <li><svg class="check" viewBox="0 0 20 20" fill="none"><path d="M4 10.5l4 4 8-9" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg> Every ingredient in the growing compound library</li>
+          <li><svg class="check" viewBox="0 0 20 20" fill="none"><path d="M4 10.5l4 4 8-9" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg> Full pairing network, unrestricted</li>
+          <li><svg class="check" viewBox="0 0 20 20" fill="none"><path d="M4 10.5l4 4 8-9" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg> New compounds and pairings added regularly</li>
+          <li><svg class="check" viewBox="0 0 20 20" fill="none"><path d="M4 10.5l4 4 8-9" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg> Save notes and export pairing maps</li>
+        </ul>
+        <a class="btn btn-primary" href="#">Start subscription</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap foot-row">
+    <span>Flavor Studio</span>
+    <span>2,400+ flavor compounds, hand-verified</span>
+  </div>
+</footer>
+
+</body>
+</html>
